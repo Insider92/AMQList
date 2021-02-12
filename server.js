@@ -1,38 +1,147 @@
 const express = require('express')
+const bodyParser = require('body-parser')
 require('dotenv').config()
-const bodyParser= require('body-parser')
+
+// New instance of express
 const app = express()
-const MongoClient = require('mongodb').MongoClient
+// New instance of mongo client
+const mongodb = require('mongodb')
+// Helper for the creaton of an ID in mongo db
+const ObjectID = mongodb.ObjectID
+
+// Name of the collection
+const SONGS_COLLECTION = 'songsJL'
+
+// letiables for mongo db
 let songs
-let db
+let database
 
-MongoClient.connect(process.env.DB_CONSTRING, {
-  useUnifiedTopology: true
+// Express middleware
+app.use(bodyParser.json());
+
+
+// Start connection to mongo db
+mongodb.MongoClient.connect(process.env.DB_CONSTRING, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true
 })
-.then(client => {
-  console.log('Connected to Database')
-  db = client.db('AMQList')
-  songs = db.collection('songs')
-})
-.catch(error => console.error(error))
+    .then(client => {
+        database = client.db('AMQList')
+        songs = database.collection(SONGS_COLLECTION)
+        console.log('Connected to Database')
+    })
+    .catch(error => console.error(error))
 
-app.use(bodyParser.urlencoded({ extended: true }))
 
-app.listen(3000, function() {
+// Start the server
+app.listen(3000, function () {
     console.log('listening on 3000')
 })
 
-app.get('/', (req, res) => {                   // ('/', (req, res) => {
-  cursor = db.collection('quotes').find()
-  console.log(cursor)
-  res.sendFile(__dirname + '/index.html')         //...
-})                                                  //})
 
-app.post('/quotes', (req, res) => {
-  songs.insertOne(req.body)
-  .then(result => {
-    res.redirect('/')
-  })
-  .catch(error => console.error(error))
-  })
+/**
+ * Example JSON Object in Mongo db
+ * 
+ *  { 
+ *   "name": "DREAM SOLISTER", 
+ *   "artist": "TRUE",
+ *   "anime": "Hibike Euphonium", 
+ *   "tags":["Kapelle", "Laut", "idk"], 
+ *   "alias":["K", "Kapelle", "l", "Laut", "idk"]
+ *  }
+ */
 
+app.get('/', (request, response) => {
+    cursor = db.collection('quotes').find()
+    console.log(cursor)
+    response.sendFile(__dirname + '/index.html')
+})
+
+
+// Create one song creation
+app.post("/api/songs", function (request, response) {
+    const song = request.body;
+
+    if (!song.name) {
+        manageError(response, "Invalid name input", "song name is mandatory.", 400);
+        return
+    }
+    if (!song.artist) {
+        manageError(response, "Invalid artist input", "Anime name is mandatory.", 400);
+        return
+    }
+    if (!song.anime) {
+        manageError(response, "Invalid anime input", "Anime name is mandatory.", 400);
+        return
+    }
+
+    database.collection(SONGS_COLLECTION).insertOne(song, function (error, mongoDbAnswer) {
+        if (error) {
+            manageError(response, error.message, "Failed to create song entry.");
+        } else {
+            response.status(201).json(mongoDbAnswer.ops[0]);
+        }
+    });
+
+});
+
+// Delete one song
+app.delete("/api/songs/:id", function (request, response) {
+
+    // Mongo db id needs this properties, exp. 6026bbb000231f2f381fbe95
+    if (request.params.id.length > 24 || request.params.id.length < 24) {
+        manageError(response, "Invalid song id", "ID must be a single String of 12 bytes or a string of 24 hex characters.", 400);
+        return
+    }
+
+    database.collection(SONGS_COLLECTION).deleteOne({ _id: new ObjectID(request.params.id) }, function (error) {
+        if (error) {
+            manageError(response, error.message, "Failed to delete song.");
+        } else {
+            response.status(200).json(request.params.id);
+        }
+    });
+
+});
+
+// Update one song
+app.put("/api/songs/:id", function (request, response) {
+
+    const song = request.body;
+
+    // Mongo db id needs this properties, exp. 6026bbb000231f2f381fbe95
+    if (request.params.id.length > 24 || request.params.id.length < 24) {
+        manageError(response, "Invalid song id", "ID must be a single String of 12 bytes or a string of 24 hex characters.", 400);
+    }
+
+    if (!song.name) {
+        manageError(response, "Invalid name input", "song name is mandatory.", 400);
+        return
+    }
+    if (!song.artist) {
+        manageError(response, "Invalid artist input", "artist name is mandatory.", 400);
+        return
+    }
+    if (!song.anime) {
+        manageError(response, "Invalid anime input", "anime name is mandatory.", 400);
+        return
+    }
+
+    database.collection(SONGS_COLLECTION).findOneAndUpdate({ _id: new ObjectID(request.params.id) },
+        { $set: song },
+        { upsert: true }
+        , function (error) {
+            if (error) {
+                manageError(response, err.message, "Failed to update song.");
+            } else {
+                response.status(200).json(request.params.id);
+            }
+        });
+});
+
+
+// Errors handler.
+function manageError(response, reason, message, code) {
+    console.log("Error: " + reason);
+    response.status(code || 500).json({ "error": message });
+}
