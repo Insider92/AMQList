@@ -30,6 +30,7 @@ mongodb.MongoClient.connect(process.env.DB_CONSTRING, {
     .then(client => {
         database = client.db('AMQList')
         songs = database.collection(SONGS_COLLECTION)
+        database.collection(SONGS_COLLECTION).createIndex({ tags: "text", alias: "text" }, { name: "searchIndex" })
         console.log('Connected to Database')
     })
     .catch(error => console.error(error))
@@ -54,6 +55,21 @@ app.listen(3000, function () {
  */
 
 app.get('/api/songs', (request, response) => {
+
+    const songName = request.query.name
+    const songNameRegex = new RegExp(songName, "i");
+
+    database.collection(SONGS_COLLECTION).find({name : songNameRegex },async (error, songsEntity) => {
+        if (error) {
+            manageError(response, error.message, "Failed to get song entries.")
+        } else {
+            const songs = await songsEntity.toArray()
+            response.send(songs);
+        }
+    })
+})
+
+app.get('/api/search', (request, response) => {
     database.collection(SONGS_COLLECTION).find(async (error, songsEntity) => {
         if (error) {
             manageError(response, error.message, "Failed to get song entries.")
@@ -71,7 +87,7 @@ app.get('/api/songs/:id', (request, response) => {
         manageError(response, "Invalid song id", "ID must be a single String of 12 bytes or a string of 24 hex characters.", 400);
         return
     }
-    
+
     database.collection(SONGS_COLLECTION).findOne({ _id: new ObjectID(request.params.id) }, async (error, song) => {
         if (error) {
             manageError(response, error.message, "Failed to get song entries.")
@@ -136,10 +152,6 @@ app.put("/api/songs/:id", (request, response) => {
 
     if (!song.name) {
         manageError(response, "Invalid name input", "song name is mandatory.", 400);
-        return
-    }
-    if (!song.artist) {
-        manageError(response, "Invalid artist input", "artist name is mandatory.", 400);
         return
     }
     if (!song.anime) {

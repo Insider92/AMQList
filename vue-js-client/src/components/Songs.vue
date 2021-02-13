@@ -1,9 +1,9 @@
 <template>
   <div class="list row">
-    <div class="col-md-8">
+    <div class="col-md-12">
       <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder="Search by title"
-          v-model="title"/>
+        <input type="text" class="form-control" placeholder="Search by name"
+          v-model="name"/>
         <div class="input-group-append">
           <button class="btn btn-outline-secondary" type="button"
             @click="searchTitle"
@@ -62,7 +62,7 @@ export default {
       songs: [],
       currentSong: null,
       currentIndex: -1,
-      title: ""
+      name: ""
     };
   },
   methods: {
@@ -89,7 +89,7 @@ export default {
     },
     
     searchTitle() {
-      ApiService.findByTitle(this.title)
+      ApiService.findByName(this.name)
         .then(response => {
           this.songs = response.data;
           console.log(response.data);
@@ -108,7 +108,6 @@ export default {
 <style>
 .list {
   text-align: left;
-  max-width: 750px;
   margin: auto;
 }
 </style>

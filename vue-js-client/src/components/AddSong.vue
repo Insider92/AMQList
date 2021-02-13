@@ -1,58 +1,65 @@
 <template>
   <div class="submit-form">
     <div v-if="!submitted">
-      <form>
-        <div
-          class="form-group required" :class="{ 'form-group--error': $v.name.$error }"
-        >
-          <label for="title">Name</label>
+      <b-form>
+        <div class="form-group" label="Name">
+          <label for="name">Name <span class="text-danger">*</span></label>
           <input
             class="form-control"
+            placeholder="Name of the song"
+            :class="{ 'is-invalid': validationStatus($v.name) }"
             v-model.trim="$v.name.$model"
           />
-        </div>
-        <div class="error" v-if="!$v.name.required">Field is required</div>
-        <div class="form-group">
-          <label for="artist">Artist</label>
-          <input
-            type="text"
-            class="form-control"
-            id="artist"
-            required
-            v-model="artist"
-          />
-        </div>
-        <div class="form-group required">
-          <label for="anime">Anime</label>
-          <input
-            type="text"
-            class="form-control"
-            id="anime"
-            required
-            v-model="anime"
-          />
-        </div>
-        <div class="form-group">
-          <label for="tags">Tags</label>
-          <input
-            type="text"
-            class="form-control"
-            id="tags"
-            v-model="tags"
-          />
+          <div v-if="!$v.name.required" class="invalid-feedback">
+            Field is required
+          </div>
         </div>
 
         <div class="form-group">
-          <label for="alias">Alias</label>
-          <input
-            type="text"
-            class="form-control"
-            id="alias"
-            v-model="alias"
-          />
+          <label for="artist">Artist</label>
+          <input class="form-control" placeholder="Name of the artist" v-model="artist" />
         </div>
-      </form>
-      <button @click="saveSong" class="btn" :disabled="$v.$invalid">Submit</button>
+
+        <div class="form-group">
+          <label for="anime">Anime <span class="text-danger">*</span></label>
+          <input
+            class="form-control"
+            placeholder="Name of the anime"
+            :class="{ 'is-invalid': validationStatus($v.anime) }"
+            v-model="$v.anime.$model"
+          />
+          <div v-if="!$v.anime.required" class="invalid-feedback">
+            Field is required
+          </div>
+        </div>
+
+      <div class="form-group">
+        <label for="tags">Tags</label>
+        <b-form-tags
+          v-model="tags"
+          placeholder="Enter new tags separated by space, comma or semicolon..."
+          separator=" ,;"
+        ></b-form-tags>
+      </div>
+
+      <div class="form-group">
+        <label for="alias">Alias</label>
+        <b-form-tags
+          v-model="alias"
+          placeholder="Enter new alias separated by space, comma or semicolon..."
+          separator=" ,;"
+        ></b-form-tags>
+      </div>
+      </b-form>
+      <button
+        @click="saveSong"
+        class="btn btn-success mr-2"
+        :disabled="$v.$invalid"
+      >
+        Submit
+      </button>
+
+      <button class="btn badge-info" @click="discardSong">Discard</button>
     </div>
 
     <div v-else>
@@ -64,7 +71,7 @@
 
 <script>
 import ApiService from "../services/ApiService";
-import { required, minLength } from "vuelidate/lib/validators";
+import { required } from "vuelidate/lib/validators";
 
 export default {
   name: "add-song",
@@ -82,7 +89,6 @@ export default {
   validations: {
     name: {
       required,
-       minLength: minLength(4)
     },
     anime: {
       required,
@@ -98,7 +104,6 @@ export default {
         alias: this.alias,
       };
 
-
       ApiService.create(data)
         .then((response) => {
           this.id = response.data.id;
@@ -113,19 +118,20 @@ export default {
     newSong() {
       this.submitted = false;
       this.song = {};
-    }
+    },
+
+    discardSong() {
+      this.$router.push({ name: "songs" });
+    },
+    validationStatus: function (validation) {
+      return typeof validation != "undefined" ? validation.$error : false;
+    },
   },
 };
 </script>
 
 <style>
 .submit-form {
-  max-width: 300px;
   margin: auto;
-}
-
-.required label::after {
-  content: " *";
-  color: red;
 }
 </style>

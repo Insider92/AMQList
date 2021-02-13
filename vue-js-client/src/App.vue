@@ -1,10 +1,10 @@
 <template>
   <div id="app">
-        <nav class="navbar navbar-expand navbar-dark bg-dark">
+    <nav class="navbar navbar-expand navbar-dark bg-dark">
       <router-link to="/" class="navbar-brand">AMQList</router-link>
       <div class="navbar-nav mr-auto">
         <li class="nav-item">
-          <router-link to="/songs" class="nav-link">Tutorials</router-link>
+          <router-link to="/songs" class="nav-link">Songs</router-link>
         </li>
         <li class="nav-item">
           <router-link to="/add" class="nav-link">Add</router-link>
@@ -12,17 +12,16 @@
       </div>
     </nav>
 
-    <div class="container mt-3">
+    <div class="ma-0 pa-0 fill-height mt-4">
       <router-view />
     </div>
   </div>
 </template>
 
 <script>
-
 export default {
-  name: 'App'
-}
+  name: "App",
+};
 </script>
 
 <style>
