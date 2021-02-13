@@ -1,5 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const cors = require('cors')
 require('dotenv').config()
 
 // New instance of express
@@ -17,7 +18,8 @@ let songs
 let database
 
 // Express middleware
-app.use(bodyParser.json());
+app.use(bodyParser.json())
+app.use(cors())
 
 
 // Start connection to mongo db
@@ -51,23 +53,41 @@ app.listen(3000, function () {
  *  }
  */
 
-app.get('/', (request, response) => {
-    cursor = db.collection('quotes').find()
-    console.log(cursor)
-    response.sendFile(__dirname + '/index.html')
+app.get('/api/songs', (request, response) => {
+    database.collection(SONGS_COLLECTION).find(async (error, songsEntity) => {
+        if (error) {
+            manageError(response, error.message, "Failed to get song entries.")
+        } else {
+            const songs = await songsEntity.toArray()
+            response.send(songs);
+        }
+    })
+})
+
+app.get('/api/songs/:id', (request, response) => {
+
+    // Mongo db id needs this properties, exp. 6026bbb000231f2f381fbe95
+    if (request.params.id.length > 24 || request.params.id.length < 24) {
+        manageError(response, "Invalid song id", "ID must be a single String of 12 bytes or a string of 24 hex characters.", 400);
+        return
+    }
+    
+    database.collection(SONGS_COLLECTION).findOne({ _id: new ObjectID(request.params.id) }, async (error, song) => {
+        if (error) {
+            manageError(response, error.message, "Failed to get song entries.")
+        } else {
+            response.send(song);
+        }
+    })
 })
 
 
 // Create one song creation
-app.post("/api/songs", function (request, response) {
+app.post("/api/songs", (request, response) => {
     const song = request.body;
 
     if (!song.name) {
         manageError(response, "Invalid name input", "song name is mandatory.", 400);
-        return
-    }
-    if (!song.artist) {
-        manageError(response, "Invalid artist input", "Anime name is mandatory.", 400);
         return
     }
     if (!song.anime) {
@@ -81,12 +101,12 @@ app.post("/api/songs", function (request, response) {
         } else {
             response.status(201).json(mongoDbAnswer.ops[0]);
         }
-    });
+    })
 
 });
 
 // Delete one song
-app.delete("/api/songs/:id", function (request, response) {
+app.delete("/api/songs/:id", (request, response) => {
 
     // Mongo db id needs this properties, exp. 6026bbb000231f2f381fbe95
     if (request.params.id.length > 24 || request.params.id.length < 24) {
@@ -105,7 +125,7 @@ app.delete("/api/songs/:id", function (request, response) {
 });
 
 // Update one song
-app.put("/api/songs/:id", function (request, response) {
+app.put("/api/songs/:id", (request, response) => {
 
     const song = request.body;
 
@@ -132,7 +152,7 @@ app.put("/api/songs/:id", function (request, response) {
         { upsert: true }
         , function (error) {
             if (error) {
-                manageError(response, err.message, "Failed to update song.");
+                manageError(response, error.message, "Failed to update song.");
             } else {
                 response.status(200).json(request.params.id);
             }

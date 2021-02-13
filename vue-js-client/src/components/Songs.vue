@@ -26,9 +26,6 @@
         </li>
       </ul>
 
-      <button class="m-3 btn btn-sm btn-danger" @click="removeAllSongs">
-        Remove All
-      </button>
     </div>
     <div class="col-md-6">
       <div v-if="currentSong">
@@ -42,7 +39,7 @@
 
 
         <a class="badge badge-warning"
-          :href="'/songs/' + currentSong.id"
+          :href="'/songs/' + currentSong._id"
         >
           Edit
         </a>
@@ -89,17 +86,6 @@ export default {
     setActiveSong(song, index) {
       this.currentSong = song;
       this.currentIndex = index;
-    },
-
-    removeAllSongs() {
-      ApiService.deleteAll()
-        .then(response => {
-          console.log(response.data);
-          this.refreshList();
-        })
-        .catch(e => {
-          console.log(e);
-        });
     },
     
     searchTitle() {

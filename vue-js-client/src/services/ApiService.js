@@ -21,10 +21,6 @@ class DataService {
     return http.delete(`/songs/${id}`);
   }
 
-  deleteAll() {
-    return http.delete(`/songs${id}`);
-  }
-
   findByTitle(title) {
     return http.get(`/songs?title=${title}`);
   }

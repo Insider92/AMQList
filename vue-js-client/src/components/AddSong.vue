@@ -1,30 +1,58 @@
 <template>
   <div class="submit-form">
     <div v-if="!submitted">
-      <div class="form-group">
-        <label for="title">Title</label>
-        <input
-          type="text"
-          class="form-control"
-          id="title"
-          required
-          v-model="tutorial.title"
-          name="title"
-        />
-      </div>
+      <form>
+        <div
+          class="form-group required" :class="{ 'form-group--error': $v.name.$error }"
+        >
+          <label for="title">Name</label>
+          <input
+            class="form-control"
+            v-model.trim="$v.name.$model"
+          />
+        </div>
+        <div class="error" v-if="!$v.name.required">Field is required</div>
+        <div class="form-group">
+          <label for="artist">Artist</label>
+          <input
+            type="text"
+            class="form-control"
+            id="artist"
+            required
+            v-model="artist"
+          />
+        </div>
+        <div class="form-group required">
+          <label for="anime">Anime</label>
+          <input
+            type="text"
+            class="form-control"
+            id="anime"
+            required
+            v-model="anime"
+          />
+        </div>
+        <div class="form-group">
+          <label for="tags">Tags</label>
+          <input
+            type="text"
+            class="form-control"
+            id="tags"
+            v-model="tags"
+          />
+        </div>
 
-      <div class="form-group">
-        <label for="description">Description</label>
-        <input
-          class="form-control"
-          id="description"
-          required
-          v-model="tutorial.description"
-          name="description"
-        />
-      </div>
-
-      <button @click="saveSong" class="btn btn-success">Submit</button>
+        <div class="form-group">
+          <label for="alias">Alias</label>
+          <input
+            type="text"
+            class="form-control"
+            id="alias"
+            v-model="alias"
+          />
+        </div>
+      </form>
+      <button @click="saveSong" class="btn" :disabled="$v.$invalid">Submit</button>
     </div>
 
     <div v-else>
@@ -36,43 +64,57 @@
 
 <script>
 import ApiService from "../services/ApiService";
+import { required, minLength } from "vuelidate/lib/validators";
 
 export default {
   name: "add-song",
   data() {
     return {
-      tutorial: {
-        id: null,
-        title: "",
-        description: "",
-        published: false
-      },
-      submitted: false
+      id: null,
+      name: "",
+      artist: "",
+      anime: "",
+      tags: "",
+      alias: "",
+      submitted: false,
     };
+  },
+  validations: {
+    name: {
+      required,
+       minLength: minLength(4)
+    },
+    anime: {
+      required,
+    },
   },
   methods: {
     saveSong() {
-      var data = {
-        title: this.tutorial.title,
-        description: this.tutorial.description
+      const data = {
+        name: this.name,
+        artist: this.artist,
+        anime: this.anime,
+        tags: this.tags,
+        alias: this.alias,
       };
 
+
       ApiService.create(data)
-        .then(response => {
-          this.tutorial.id = response.data.id;
+        .then((response) => {
+          this.id = response.data.id;
           console.log(response.data);
           this.submitted = true;
+          //this.$router.push({ name: "songs" });
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
         });
     },
-    
     newSong() {
       this.submitted = false;
-      this.tutorial = {};
+      this.song = {};
     }
-  }
+  },
 };
 </script>
 
@@ -80,5 +122,10 @@ export default {
 .submit-form {
   max-width: 300px;
   margin: auto;
+}
+
+.required label::after {
+  content: " *";
+  color: red;
 }
 </style>
